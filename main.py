@@ -1,24 +1,12 @@
-import sys, time, threading
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QProgressBar, QLabel, QComboBox, QLineEdit, QTableWidget,
-                             QTableWidgetItem, QMessageBox)
+import sys, os, time, threading
+from PyQt5 import uic
+from PyQt5.QtWidgets import QApplication, QWidget, QTableWidgetItem, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 from scraper import Scraper, load_books, FIELDS
 from sorting import ALGOS, get_value
 from searching import MODES, linear_search, binary_search, composite_search
 
-
-def combo(items):
-    box = QComboBox()
-    box.addItems(items)
-    return box
-
-
-def make_row(*widgets):
-    row = QHBoxLayout()
-    for w in widgets:
-        row.addWidget(w)
-    return row
+UI_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main_window.ui")
 
 
 class MainWindow(QWidget):
@@ -27,80 +15,51 @@ class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Book Explorer - CS200 Project 1")
-        self.resize(1200, 850)
+        uic.loadUi(UI_FILE, self)              # loads the window you designed
+        self.setWindowTitle("Book Explorer")
         self.scraper = None
         self.all_rows = load_books()
         self.shown_rows = self.all_rows
-        self.build_ui()
+        self.fill_dropdowns()
+        self.connect_buttons()
         self.progress_signal.connect(self.update_progress)
         self.done_signal.connect(self.scrape_finished)
         self.show_rows(self.shown_rows)
 
-    # ---------- building the screen ----------
-    def build_ui(self):
-        layout = QVBoxLayout(self)
+    # ---------- fill the empty dropdowns ----------
+    def fill_dropdowns(self):
+        self.sort_col.addItems(FIELDS)
+        self.then_col.addItems(["(none)"] + FIELDS)
+        self.algo_box.addItems(list(ALGOS.keys()))
+        self.scope_box.addItems(["Full dataset", "Filtered results only"])
+        self.s_col1.addItems(FIELDS)
+        self.s_mode1.addItems(MODES)
+        self.s_algo.addItems(["Linear", "Binary (exact match)"])
+        self.op_box.addItems(["(none)", "AND", "OR", "NOT"])
+        self.s_col2.addItems(FIELDS)
+        self.s_mode2.addItems(MODES)
 
-        # scraping controls
-        self.progress = QProgressBar()
-        self.count_label = QLabel("")
-        start_btn, pause_btn = QPushButton("Start"), QPushButton("Pause")
-        resume_btn, stop_btn = QPushButton("Resume"), QPushButton("Stop")
-        start_btn.clicked.connect(self.start_scrape)
-        pause_btn.clicked.connect(self.pause_scrape)
-        resume_btn.clicked.connect(self.resume_scrape)
-        stop_btn.clicked.connect(self.stop_scrape)
-        layout.addLayout(make_row(start_btn, pause_btn, resume_btn, stop_btn,
-                                  self.progress, self.count_label))
-
-        # main table
-        self.table = QTableWidget()
-        layout.addWidget(self.table, 3)
-
-        # sorting controls
-        self.sort_col = combo(FIELDS)
-        self.then_col = combo(["(none)"] + FIELDS)
-        self.algo_box = combo(list(ALGOS.keys()))
-        self.scope_box = combo(["Full dataset", "Filtered results only"])
-        sort_btn, bench_btn = QPushButton("Sort"), QPushButton("Benchmark")
-        sort_btn.clicked.connect(self.do_sort)
-        bench_btn.clicked.connect(self.do_benchmark)
-        layout.addLayout(make_row(QLabel("Sort by:"), self.sort_col, QLabel("then by:"),
-                                  self.then_col, QLabel("Algorithm:"), self.algo_box,
-                                  QLabel("Scope:"), self.scope_box, sort_btn, bench_btn))
-
-        # search condition 1
-        self.s_col1, self.s_mode1 = combo(FIELDS), combo(MODES)
-        self.s_text1 = QLineEdit()
-        self.s_algo = combo(["Linear", "Binary (exact match)"])
-        search_btn, reset_btn = QPushButton("Search"), QPushButton("Reset")
-        search_btn.clicked.connect(self.do_search)
-        reset_btn.clicked.connect(self.reset)
-        layout.addLayout(make_row(QLabel("Search:"), self.s_col1, self.s_mode1, self.s_text1,
-                                  QLabel("Algorithm:"), self.s_algo, search_btn, reset_btn))
-
-        # search condition 2 (composite)
-        self.op_box = combo(["(none)", "AND", "OR", "NOT"])
-        self.s_col2, self.s_mode2 = combo(FIELDS), combo(MODES)
-        self.s_text2 = QLineEdit()
-        layout.addLayout(make_row(QLabel("Combine with:"), self.op_box, self.s_col2,
-                                  self.s_mode2, self.s_text2))
-
-        self.info_label = QLabel("")
-        layout.addWidget(self.info_label)
-
-        # benchmark table
-        self.bench_table = QTableWidget()
-        layout.addWidget(self.bench_table, 1)
+    # ---------- connect buttons to functions ----------
+    def connect_buttons(self):
+        self.start_btn.clicked.connect(self.start_scrape)
+        self.pause_btn.clicked.connect(self.pause_scrape)
+        self.resume_btn.clicked.connect(self.resume_scrape)
+        self.stop_btn.clicked.connect(self.stop_scrape)
+        self.sort_btn.clicked.connect(self.do_sort)
+        self.bench_btn.clicked.connect(self.do_benchmark)
+        self.search_btn.clicked.connect(self.do_search)
+        self.reset_btn.clicked.connect(self.reset)
 
     # ---------- showing data ----------
     def show_rows(self, rows):
+        self.table.setUpdatesEnabled(False)
         self.table.setRowCount(len(rows))
         self.table.setColumnCount(len(FIELDS))
         self.table.setHorizontalHeaderLabels(FIELDS)
         for i, row in enumerate(rows):
             for j, field in enumerate(FIELDS):
                 self.table.setItem(i, j, QTableWidgetItem(str(row[field])))
+        self.table.setUpdatesEnabled(True)
         self.count_label.setText(f"Showing {len(rows)} rows")
 
     # ---------- scraping ----------
