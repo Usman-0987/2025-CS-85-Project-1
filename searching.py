@@ -26,7 +26,7 @@ def linear_search(rows, condition):
 
 
 def binary_search(rows, column, value):
-    """Exact match only. Needs sorted data, so we sort by that column first."""
+    """Exact match only. Needs sorted data, so sort by that column first."""
     rows = quick_sort(rows, lambda r: get_value(r, column))[0]
     target = int(value) if column in NUMBER_COLUMNS else value.lower()
     low, high = 0, len(rows) - 1

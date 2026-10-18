@@ -13,7 +13,7 @@ def first(value):
 
 
 class Scraper:
-    def __init__(self, total_pages=160):      # 160 pages x 100 = 16,000 books
+    def __init__(self, total_pages=160):     
         self.total_pages = total_pages
         self.paused = False
         self.stopped = False
@@ -21,9 +21,9 @@ class Scraper:
 
     def run(self, on_progress):
         for page in range(1, self.total_pages + 1):
-            while self.paused and not self.stopped:     # pause = wait here
+            while self.paused and not self.stopped:    
                 time.sleep(0.2)
-            if self.stopped:                            # stop = leave the loop
+            if self.stopped:                       
                 break
             try:
                 params = {"q": "fiction", "limit": 100, "page": page, "fields": API_FIELDS}
@@ -46,7 +46,7 @@ class Scraper:
                     "pages": d.get("number_of_pages_median", 0),
                 })
             on_progress(page, self.total_pages)
-            time.sleep(0.3)                             # be polite to the server
+            time.sleep(0.3)                           
         self.save()
 
     def save(self):
@@ -72,6 +72,6 @@ def load_books():
 
 
 if __name__ == "__main__":
-    s = Scraper(total_pages=160)        # test with 2 pages first
+    s = Scraper(total_pages=160)       
     s.run(lambda page, total: print(f"page {page}/{total}, books: {len(s.books)}")) 
 

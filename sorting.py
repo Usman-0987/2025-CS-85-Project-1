@@ -15,7 +15,7 @@ def check_numbers(values):
             raise ValueError("numbers only")
 
 
-# ---------------- simple sorts ----------------
+ 
 
 def bubble_sort(rows, key):
     arr = rows[:]
@@ -105,7 +105,7 @@ def shell_sort(rows, key):
     return arr, comps, swaps
 
 
-# ---------------- quick and merge sorts ----------------
+
 
 def quick_sort(rows, key):
     arr = rows[:]
@@ -192,7 +192,7 @@ def hybrid_merge_sort(rows, key):
     return sort(rows[:]), comps, swaps
 
 
-# ---------------- number sorts (no comparing) ----------------
+# number sorts (no comparing) 
 
 def counting_sort(rows, key):
     values = [key(r) for r in rows]
@@ -250,7 +250,7 @@ def bucket_sort(rows, key):
     return result, comps, swaps
 
 
-# name -> (function, time complexity, stable?)
+
 ALGOS = {
     "Bubble Sort":       (bubble_sort,       "O(n²)",                       "Stable"),
     "Selection Sort":    (selection_sort,    "O(n²)",                       "Not stable"),

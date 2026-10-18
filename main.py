@@ -10,12 +10,12 @@ UI_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main_window.
 
 
 class MainWindow(QWidget):
-    progress_signal = pyqtSignal(int, int)
     done_signal = pyqtSignal()
+    progress_signal = pyqtSignal(int, int)
 
     def __init__(self):
         super().__init__()
-        uic.loadUi(UI_FILE, self)              # loads the window you designed
+        uic.loadUi(UI_FILE, self)              # loads the window designed
         self.setWindowTitle("Book Explorer")
         self.scraper = None
         self.all_rows = load_books()
@@ -26,7 +26,7 @@ class MainWindow(QWidget):
         self.done_signal.connect(self.scrape_finished)
         self.show_rows(self.shown_rows)
 
-    # ---------- fill the empty dropdowns ----------
+    #  fill the empty dropdowns 
     def fill_dropdowns(self):
         self.sort_col.addItems(FIELDS)
         self.then_col.addItems(["(none)"] + FIELDS)
@@ -39,7 +39,7 @@ class MainWindow(QWidget):
         self.s_col2.addItems(FIELDS)
         self.s_mode2.addItems(MODES)
 
-    # ---------- connect buttons to functions ----------
+    # connect buttons to functions 
     def connect_buttons(self):
         self.start_btn.clicked.connect(self.start_scrape)
         self.pause_btn.clicked.connect(self.pause_scrape)
@@ -50,7 +50,7 @@ class MainWindow(QWidget):
         self.search_btn.clicked.connect(self.do_search)
         self.reset_btn.clicked.connect(self.reset)
 
-    # ---------- showing data ----------
+    #  showing data
     def show_rows(self, rows):
         self.table.setUpdatesEnabled(False)
         self.table.setRowCount(len(rows))
@@ -62,7 +62,7 @@ class MainWindow(QWidget):
         self.table.setUpdatesEnabled(True)
         self.count_label.setText(f"Showing {len(rows)} rows")
 
-    # ---------- scraping ----------
+    #  scraping 
     def start_scrape(self):
         self.scraper = Scraper()
         self.progress.setValue(0)
@@ -95,7 +95,7 @@ class MainWindow(QWidget):
         self.show_rows(self.shown_rows)
         QMessageBox.information(self, "Done", "Scraping finished and saved to books.csv")
 
-    # ---------- sorting ----------
+    #  sorting 
     def get_key(self):
         c1 = self.sort_col.currentText()
         c2 = self.then_col.currentText()
@@ -150,7 +150,7 @@ class MainWindow(QWidget):
             QApplication.processEvents()
         self.info_label.setText("Benchmark finished")
 
-    # ---------- searching ----------
+    #  searching
     def do_search(self):
         rows = self.all_rows
         cond1 = (self.s_col1.currentText(), self.s_mode1.currentText(), self.s_text1.text())
