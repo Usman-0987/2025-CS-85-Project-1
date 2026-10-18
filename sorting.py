@@ -8,6 +8,15 @@ def get_value(row, column):
     return str(row[column]).lower()
 
 
+def check_numbers(values):
+    """Counting, Radix and Bucket sort need whole numbers."""
+    for v in values:
+        if not isinstance(v, int):
+            raise ValueError("numbers only")
+
+
+# ---------------- simple sorts ----------------
+
 def bubble_sort(rows, key):
     arr = rows[:]
     comps = swaps = 0
@@ -56,6 +65,47 @@ def insertion_sort(rows, key):
                 break
     return arr, comps, swaps
 
+
+def gnome_sort(rows, key):
+    arr = rows[:]
+    comps = swaps = 0
+    i = 0
+    while i < len(arr):
+        if i == 0:
+            i += 1
+        else:
+            comps += 1
+            if key(arr[i - 1]) <= key(arr[i]):
+                i += 1
+            else:
+                arr[i - 1], arr[i] = arr[i], arr[i - 1]
+                swaps += 1
+                i -= 1
+    return arr, comps, swaps
+
+
+def shell_sort(rows, key):
+    arr = rows[:]
+    comps = swaps = 0
+    gap = len(arr) // 2
+    while gap > 0:
+        for i in range(gap, len(arr)):
+            temp = arr[i]
+            j = i
+            while j >= gap:
+                comps += 1
+                if key(arr[j - gap]) > key(temp):
+                    arr[j] = arr[j - gap]
+                    swaps += 1
+                    j -= gap
+                else:
+                    break
+            arr[j] = temp
+        gap //= 2
+    return arr, comps, swaps
+
+
+# ---------------- quick and merge sorts ----------------
 
 def quick_sort(rows, key):
     arr = rows[:]
@@ -114,34 +164,103 @@ def merge_sort(rows, key):
     return sort(rows[:]), comps, 0               # merge sort has no swaps
 
 
-def shell_sort(rows, key):
-    arr = rows[:]
+def hybrid_merge_sort(rows, key):
+    """Merge sort, but small pieces (10 or fewer) are sorted with insertion sort."""
     comps = swaps = 0
-    gap = len(arr) // 2
-    while gap > 0:
-        for i in range(gap, len(arr)):
-            temp = arr[i]
-            j = i
-            while j >= gap:
-                comps += 1
-                if key(arr[j - gap]) > key(temp):
-                    arr[j] = arr[j - gap]
-                    swaps += 1
-                    j -= gap
-                else:
-                    break
-            arr[j] = temp
-        gap //= 2
-    return arr, comps, swaps
+
+    def sort(a):
+        nonlocal comps, swaps
+        if len(a) <= 10:
+            a, c, s = insertion_sort(a, key)
+            comps += c
+            swaps += s
+            return a
+        mid = len(a) // 2
+        left, right = sort(a[:mid]), sort(a[mid:])
+        result = []
+        i = j = 0
+        while i < len(left) and j < len(right):
+            comps += 1
+            if key(left[i]) <= key(right[j]):
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+        return result + left[i:] + right[j:]
+
+    return sort(rows[:]), comps, swaps
+
+
+# ---------------- number sorts (no comparing) ----------------
+
+def counting_sort(rows, key):
+    values = [key(r) for r in rows]
+    check_numbers(values)
+    if not rows:
+        return [], 0, 0
+    low = min(values)
+    counts = [0] * (max(values) - low + 1)
+    for v in values:                              # count each value
+        counts[v - low] += 1
+    for i in range(1, len(counts)):               # running total = final position
+        counts[i] += counts[i - 1]
+    result = [None] * len(rows)
+    for k in range(len(rows) - 1, -1, -1):        # go backwards to keep it stable
+        v = values[k]
+        counts[v - low] -= 1
+        result[counts[v - low]] = rows[k]
+    return result, 0, 0                           # no comparisons, no swaps
+
+
+def radix_sort(rows, key):
+    check_numbers([key(r) for r in rows])
+    arr = rows[:]
+    if not arr:
+        return arr, 0, 0
+    biggest = max(key(r) for r in arr)
+    place = 1                                     # 1 = ones, 10 = tens, 100 = hundreds...
+    while biggest // place > 0:
+        buckets = [[] for _ in range(10)]
+        for r in arr:
+            buckets[(key(r) // place) % 10].append(r)
+        arr = [r for b in buckets for r in b]
+        place *= 10
+    return arr, 0, 0
+
+
+def bucket_sort(rows, key):
+    values = [key(r) for r in rows]
+    check_numbers(values)
+    if not rows:
+        return [], 0, 0
+    low, high = min(values), max(values)
+    count = 100                                   # number of buckets
+    buckets = [[] for _ in range(count)]
+    for r in rows:
+        index = (key(r) - low) * (count - 1) // (high - low or 1)
+        buckets[index].append(r)
+    result = []
+    comps = swaps = 0
+    for b in buckets:                             # sort each bucket, then join them
+        b, c, s = quick_sort(b, key)
+        comps += c
+        swaps += s
+        result += b
+    return result, comps, swaps
 
 
 # name -> (function, time complexity, stable?)
 ALGOS = {
-    "Bubble Sort":    (bubble_sort,    "O(n²)",                       "Stable"),
-    "Selection Sort": (selection_sort, "O(n²)",                       "Not stable"),
-    "Insertion Sort": (insertion_sort, "O(n²)",                       "Stable"),
-    "Quick Sort":     (quick_sort,     "O(n log n) avg, O(n²) worst", "Not stable"),
-    "Merge Sort":     (merge_sort,     "O(n log n)",                  "Stable"),
-    "Shell Sort":     (shell_sort,     "O(n²) worst",                 "Not stable"),
-}# -*- coding: utf-8 -*-
-
+    "Bubble Sort":       (bubble_sort,       "O(n²)",                       "Stable"),
+    "Selection Sort":    (selection_sort,    "O(n²)",                       "Not stable"),
+    "Insertion Sort":    (insertion_sort,    "O(n²)",                       "Stable"),
+    "Merge Sort":        (merge_sort,        "O(n log n)",                  "Stable"),
+    "Hybrid Merge Sort": (hybrid_merge_sort, "O(n log n)",                  "Stable"),
+    "Quick Sort":        (quick_sort,        "O(n log n) avg, O(n²) worst", "Not stable"),
+    "Counting Sort":     (counting_sort,     "O(n + k)",                    "Stable"),
+    "Radix Sort":        (radix_sort,        "O(d · n)",                    "Stable"),
+    "Bucket Sort":       (bucket_sort,       "O(n + k) avg",                "Not stable"),
+    "Shell Sort":        (shell_sort,        "O(n²) worst",                 "Not stable"),
+    "Gnome Sort":        (gnome_sort,        "O(n²)",                       "Stable"),
+}

@@ -115,7 +115,13 @@ class MainWindow(QWidget):
         self.info_label.setText("Sorting... please wait")
         QApplication.processEvents()
         start = time.time()
-        result, comps, swaps = func(rows, self.get_key())
+        try:
+            result, comps, swaps = func(rows, self.get_key())
+        except ValueError:
+            self.info_label.setText("")
+            QMessageBox.warning(self, "Not possible",
+                                name + " only works on number columns (year, editions, pages).")
+            return
         ms = (time.time() - start) * 1000
         self.shown_rows = result
         self.show_rows(result)
@@ -133,9 +139,12 @@ class MainWindow(QWidget):
             self.info_label.setText(f"Benchmark running: {name}...")
             QApplication.processEvents()
             start = time.time()
-            result, comps, swaps = func(rows, key)
-            ms = (time.time() - start) * 1000
-            values = [name, f"{ms:.1f}", comps, swaps, complexity, stable]
+            try:
+                result, comps, swaps = func(rows, key)
+                ms = f"{(time.time() - start) * 1000:.1f}"
+            except ValueError:
+                ms, comps, swaps = "numbers only", "-", "-"
+            values = [name, ms, comps, swaps, complexity, stable]
             for j, v in enumerate(values):
                 self.bench_table.setItem(i, j, QTableWidgetItem(str(v)))
             QApplication.processEvents()
